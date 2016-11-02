@@ -31,7 +31,7 @@ namespace Servicio_Win_Volumenes
         {
             InitializeComponent();
             Tiempo = new Timer();
-            Tiempo.Interval = 300000; // 900000 = 15 minutos     // 600000 = 10 minutos  //  1200000 = 20 minutos
+            Tiempo.Interval = 900000; // 900000 = 15 minutos     // 600000 = 10 minutos  //  1200000 = 20 minutos
             Tiempo.Elapsed += new ElapsedEventHandler(Tiempo_Contador);
         }
         /////*******************************************************************************************************
