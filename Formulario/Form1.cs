@@ -225,7 +225,7 @@ namespace Formulario
                 Dt_Reporte.Rows.Add(Dr_Nuevo_Elemento);
 
                 Dt_Consulta.Clear();
-                Dt_Consulta = Rs_Consulta.Consultar_Volumenes_Pipa();
+                //Dt_Consulta = Rs_Consulta.Consultar_Volumenes_Pipa();
 
 
                 foreach (DataRow Registro in Dt_Reporte.Rows)

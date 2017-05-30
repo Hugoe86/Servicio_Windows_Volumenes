@@ -7,7 +7,6 @@ using System.Data;
 using SIAC.Constantes;
 using SharpContent.ApplicationBlocks.Data;
 using System.Data.SqlClient;
-using System.Globalization;
 
 
 namespace Reportes_Planeacion.Volumenes.Datos
@@ -72,41 +71,35 @@ namespace Reportes_Planeacion.Volumenes.Datos
                 //  ****************************************************************************************************************************************
                 //  ****************************************************************************************************************************************
                 //  ****************************************************************************************************************************************
+
                 Str_My_Sql = "select ";
+                Str_My_Sql += "GIRO_ID";
+                Str_My_Sql += ", Nombre_Giro";
+                Str_My_Sql += ", sum(Consumo) as Consumo";
+                Str_My_Sql += ", Bimestre";
+                Str_My_Sql += ", Anio";
+                Str_My_Sql += ", CUOTA_ID";
+
+                Str_My_Sql += " from( ";
+
+
+                Str_My_Sql += "select ";
                 Str_My_Sql += " g.GIRO_ID";
                 Str_My_Sql += ", g.Nombre_Giro ";
                 Str_My_Sql += ", isnull(sum(f.Consumo), 0) as Consumo";
-
                 Str_My_Sql += ", MONTH(f.Fecha_Emision) as Bimestre";
                 Str_My_Sql += ", year(f.Fecha_Emision) as Anio";
-
-                //Str_My_Sql += ", CASE" +
-                //                    " WHEN month(f.Fecha_Emision) = 1 THEN" +
-                //                        " 12" +
-                //                    " else" +
-                //                        " f.Bimestre " +
-                //                    " end" +
-                //                " as Bimestre";
-
-                //Str_My_Sql += ", CASE " +
-                //                    " WHEN month(f.Fecha_Emision) = 1 THEN" +
-                //                        " f.Anio - 1" +
-                //                    " ELSE" +
-                //                        " f.Anio" +
-                //                    " END" +
-                //                " as Anio";
-
                 Str_My_Sql += ", tp.CUOTA_ID";
-        
+
                 //  ****************************************************************************************************************************************
                 //  ****************************************************************************************************************************************
                 //  from **********************************************************************************************************************************
-                Str_My_Sql += " from Ope_Cor_Facturacion_Recibos f"; 
-                Str_My_Sql += " join Cat_Cor_Predios p on p.Predio_ID = f.Predio_ID";
-                Str_My_Sql += " JOIN Cat_Cor_Tarifas t ON p.Tarifa_ID = t.Tarifa_ID";
-                Str_My_Sql += " JOIN CAT_COR_TIPOS_CUOTAS tp ON tp.CUOTA_ID = t.Cuota_ID";
-                Str_My_Sql += " JOIN Cat_Cor_Giros_Actividades ga ON ga.Actividad_Giro_ID = p.Giro_Actividad_ID";
-                Str_My_Sql += " JOIN Cat_Cor_Giros g ON g.GIRO_ID = ga.Giro_ID";
+                Str_My_Sql += " from Ope_Cor_Facturacion_Recibos f";
+                Str_My_Sql += " left outer join Cat_Cor_Predios p on p.Predio_ID = f.Predio_ID";
+                Str_My_Sql += " left outer JOIN Cat_Cor_Tarifas t ON p.Tarifa_ID = t.Tarifa_ID";
+                Str_My_Sql += " left outer JOIN CAT_COR_TIPOS_CUOTAS tp ON tp.CUOTA_ID = t.Cuota_ID";
+                Str_My_Sql += " left outer JOIN Cat_Cor_Giros_Actividades ga ON ga.Actividad_Giro_ID = p.Giro_Actividad_ID";
+                Str_My_Sql += " left outer JOIN Cat_Cor_Giros g ON g.GIRO_ID = ga.Giro_ID";
 
 
                 //  ****************************************************************************************************************************************
@@ -115,6 +108,8 @@ namespace Reportes_Planeacion.Volumenes.Datos
                 Str_My_Sql += " where";
                 Str_My_Sql += " year(f.fecha_emision)  in (" + Datos.P_Anio + ")";
                 Str_My_Sql += " and month(f.fecha_emision)  in (" + Datos.P_Mes + ")";
+                Str_My_Sql += " and f.Estimado = 'NO' ";
+                Str_My_Sql += " and f.Comentarios NOT LIKE ('%CALC%') ";
 
                 if (Datos.P_Estimado == "NO")
                 {
@@ -125,7 +120,7 @@ namespace Reportes_Planeacion.Volumenes.Datos
                     Str_My_Sql += " and tp.CUOTA_ID = '00001'";
                 }
 
-            
+
                 //  ****************************************************************************************************************************************
                 //  ****************************************************************************************************************************************
                 //  GROUP BY **********************************************************************************************************************************
@@ -136,14 +131,93 @@ namespace Reportes_Planeacion.Volumenes.Datos
                 Str_My_Sql += ", f.Fecha_Emision";
 
 
-                //  ****************************************************************************************************************************************
-                //  ****************************************************************************************************************************************
-                //  ORDER BY **********************************************************************************************************************************
-                Str_My_Sql += " ORDER BY";
-                Str_My_Sql += "  year(f.Fecha_Emision) ";
-                Str_My_Sql += ", g.GIRO_ID";
-                Str_My_Sql += ", month(f.Fecha_Emision)";
+                //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+                //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+                //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+                Str_My_Sql += " union all ";
+                //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+                //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+                //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
                 
+                Str_My_Sql += " select ";
+                Str_My_Sql += " g.GIRO_ID";
+                Str_My_Sql += ", g.Nombre_Giro ";
+                //Str_My_Sql += ", isnull(sum(f.Consumo), 0) as Consumo";
+                Str_My_Sql += ",(  " +
+                                 " SELECT TOP 1 Consumo " +
+                                 " FROM Ope_Cor_Facturacion_Recibos_Historicos " +
+                                 " WHERE No_Factura_Recibo = f.No_Factura_Recibo " +
+                                 " ORDER BY Facturacion_Historico_ID ASC " +
+                                " ) AS Consumo";
+
+
+                Str_My_Sql += ", MONTH(f.Fecha_Emision) as Bimestre";
+                Str_My_Sql += ", year(f.Fecha_Emision) as Anio";
+                Str_My_Sql += ", tp.CUOTA_ID";
+
+                //  ****************************************************************************************************************************************
+                //  ****************************************************************************************************************************************
+                //  from **********************************************************************************************************************************
+                Str_My_Sql += " from Ope_Cor_Facturacion_Recibos f";
+                Str_My_Sql += " left outer join Cat_Cor_Predios p on p.Predio_ID = f.Predio_ID";
+                Str_My_Sql += " left outer JOIN Cat_Cor_Tarifas t ON p.Tarifa_ID = t.Tarifa_ID";
+                Str_My_Sql += " left outer JOIN CAT_COR_TIPOS_CUOTAS tp ON tp.CUOTA_ID = t.Cuota_ID";
+                Str_My_Sql += " left outer JOIN Cat_Cor_Giros_Actividades ga ON ga.Actividad_Giro_ID = p.Giro_Actividad_ID";
+                Str_My_Sql += " left outer JOIN Cat_Cor_Giros g ON g.GIRO_ID = ga.Giro_ID";
+
+
+                //  ****************************************************************************************************************************************
+                //  ****************************************************************************************************************************************
+                //  where **********************************************************************************************************************************
+                Str_My_Sql += " where";
+                Str_My_Sql += " year(f.fecha_emision)  in (" + Datos.P_Anio + ")";
+                Str_My_Sql += " and month(f.fecha_emision)  in (" + Datos.P_Mes + ")";
+                Str_My_Sql += " and f.Estimado = 'SI' ";
+                Str_My_Sql += " and f.Comentarios NOT LIKE ('%CALC%') ";
+
+                if (Datos.P_Estimado == "NO")
+                {
+                    Str_My_Sql += " and tp.CUOTA_ID = '00002'";
+                }
+                else
+                {
+                    Str_My_Sql += " and tp.CUOTA_ID = '00001'";
+                }
+
+
+                //  ****************************************************************************************************************************************
+                //  ****************************************************************************************************************************************
+                //  GROUP BY **********************************************************************************************************************************
+                Str_My_Sql += " GROUP by";
+                Str_My_Sql += " g.GIRO_ID";
+                Str_My_Sql += ", g.Nombre_Giro";
+                Str_My_Sql += ", tp.CUOTA_ID ";
+                Str_My_Sql += ", f.Fecha_Emision";
+                Str_My_Sql += ", f.No_Factura_Recibo ";
+
+                Str_My_Sql += ")as x ";
+
+                ////  ****************************************************************************************************************************************
+                ////  ****************************************************************************************************************************************
+                ////  GROUP BY **********************************************************************************************************************************
+                Str_My_Sql += "GROUP BY GIRO_ID";
+                Str_My_Sql += ",Nombre_Giro";
+                Str_My_Sql += ",CUOTA_ID";
+                Str_My_Sql += ",Bimestre";
+                Str_My_Sql += ", Anio";
+                Str_My_Sql += ", CUOTA_ID";
+
+
+
+
+                ////  ****************************************************************************************************************************************
+                ////  ****************************************************************************************************************************************
+                ////  ORDER BY **********************************************************************************************************************************
+                //Str_My_Sql += " ORDER BY";
+                //Str_My_Sql += "  year(f.Fecha_Emision) ";
+                //Str_My_Sql += ", g.GIRO_ID";
+                //Str_My_Sql += ", month(f.Fecha_Emision)";
+
                 Dt_Consulta = SqlHelper.ExecuteDataset(Cls_Constantes.Str_Conexion, CommandType.Text, Str_My_Sql).Tables[0];
 
             }
@@ -319,8 +393,8 @@ namespace Reportes_Planeacion.Volumenes.Datos
                 Mi_SQL += "(";
                 Mi_SQL += "  '" + Datos.P_Giro_Id + "'";                                            //  1
                 Mi_SQL += ", '" + Datos.P_Dr_Registro["Concepto"].ToString() + "'";                 //  2
-                Mi_SQL += ",  " + Convert.ToDouble(Datos.P_Anio).ToString(new CultureInfo("es-MX")) + "";                                                //  3
-                Mi_SQL += ",  " + Convert.ToDouble(Datos.P_Dr_Registro[Datos.P_Str_Nombre_Mes].ToString()).ToString(new CultureInfo("es-MX")) + "";      //  4
+                Mi_SQL += ",  " + Datos.P_Anio + "";                                                //  3
+                Mi_SQL += ",  " + Datos.P_Dr_Registro[Datos.P_Str_Nombre_Mes].ToString() + "";      //  4
                 Mi_SQL += ",  getdate()";                                                           //  5
                 Mi_SQL += ", '" + Datos.P_Str_Usuario + "'";                                        //  6
 
@@ -402,7 +476,7 @@ namespace Reportes_Planeacion.Volumenes.Datos
 
 
                 Mi_SQL = "update  Ope_Cor_Plan_Volumenes set ";
-                Mi_SQL += "  " + Datos.P_Str_Nombre_Mes + " = " + Convert.ToDouble(Datos.P_Dr_Registro[Datos.P_Str_Nombre_Mes].ToString()).ToString(new CultureInfo("es-MX"));
+                Mi_SQL += "  " + Datos.P_Str_Nombre_Mes + " = " + Datos.P_Dr_Registro[Datos.P_Str_Nombre_Mes].ToString();
                 Mi_SQL += ", fecha_modifico = getdate()";
                 Mi_SQL += ", usuario_modifico = '" + Datos.P_Str_Usuario + "'";
                 Mi_SQL += " where id = '" + Datos.P_Id + "'";
